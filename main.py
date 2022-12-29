@@ -1,12 +1,13 @@
 import math
 
+# opencv-python version >= 4.4.0 required
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
 # Modify the contrast and brightness
-def adjust_contrast_brightness(img, contrast=1.0, brightness=0):
-    brightness += int(round(255 * (1 - contrast) / 2))
+def adjust_contrast_brightness(img, contrast=1, brightness=0):
+    brightness += math.floor(round(255 * (1 - contrast) / 2))
     return cv2.addWeighted(img, contrast, img, 0, brightness)
 
 # Count the amount of contiguous white pixels in 
@@ -62,19 +63,20 @@ contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_
 
 cont = max(contours, key = cv2.contourArea)
 
+# Draw the contour and its bounding box
 image_contour = image.copy()
-cv2.drawContours(image_contour, [cont], -1, 255, 3)
+cv2.drawContours(image_contour, [cont], -1, (255, 0, 0), 7)
 
 x,y,w,h = cv2.boundingRect(cont)
-cv2.rectangle(image_contour, (x, y), (x+w, y+h), (0, 255, 0), 2)
+cv2.rectangle(image_contour, (x, y), (x+w, y+h), (0, 0, 255), 7)
 
 plt.subplot(2,3,3)
 plt.imshow(image_contour)
 plt.title("Trunk Contour")
 
 # Crop out the trunk (corresponding to the biggest contour)
-mask = np.zeros((image.shape[0],image.shape[1],1), np.uint8)
-cv2.drawContours(mask, [cont], -1, (255,255,255), -1)
+mask = np.zeros((image.shape[0], image.shape[1], 1), np.uint8)
+cv2.drawContours(mask, [cont], -1, (255, 255, 255), -1)
 
 crop = np.zeros(image.shape, np.uint8)
 crop = cv2.bitwise_and(image, image, mask = mask)
@@ -88,7 +90,7 @@ crop_transform = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
 # Increase the contrast and decrease the brightness to make the separate rings stand out
 contrast = adjust_contrast_brightness(crop_transform, contrast=5, brightness=-30)
-bw = cv2.adaptiveThreshold(contrast, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15, -2)
+bw = cv2.adaptiveThreshold(contrast, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 17, -1)
 
 plt.subplot(2,3,5)
 plt.imshow(bw)
@@ -129,7 +131,7 @@ plt.axline((x1[0], y1[0]), (x1[1], y1[1]), color="red")
 
 # Print the rings found at each of the sampled column
 for i in range(10):
-    print("Col: " + str(i) + " | " + str(ringSamples[i]))
+    print("Col " + str(i) + " | " + str(ringSamples[i]))
 
 # Sample 100 columns near the center of the trunk
 centerRings = []
